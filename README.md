@@ -10,12 +10,12 @@ A dashboard that captures every conversation, token count, and tool call across 
 
 **macOS / Linux**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/yarin-mag/Marrionet/master/scripts/install.sh | bash
 ```
 
 **Windows** (PowerShell)
 ```powershell
-irm https://raw.githubusercontent.com/OWNER/REPO/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/yarin-mag/Marrionet/master/scripts/install.ps1 | iex
 ```
 
 This downloads the latest release, installs it to `/usr/local/lib/marionette`, registers the MCP server with Claude Code, and configures auto-start.
@@ -31,7 +31,7 @@ After installing, open **http://localhost:8787**.
 - pnpm 9+
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
+git clone https://github.com/yarin-mag/Marrionet.git
 cd marionette
 pnpm install
 ```
@@ -106,7 +106,7 @@ This covers the most common case: you changed something in `apps/web`, `packages
 
 ```bash
 # 1. Make sure you're on main and everything is committed
-git checkout main
+git checkout master
 git pull
 
 # 2. Bump the version in the root package.json
@@ -115,7 +115,7 @@ npm version patch   # or minor / major
 # This updates package.json AND creates a git commit automatically
 
 # 3. Push the commit + the new tag
-git push origin main --follow-tags
+git push origin master --follow-tags
 ```
 
 That's it. GitHub Actions picks up the new tag, runs all 4 builds in parallel (~5–8 min),
@@ -181,7 +181,6 @@ Before tagging a release, make sure:
 - [ ] `pnpm lint` is clean
 - [ ] The app runs locally: `pnpm dev`, open http://localhost:8787, verify the dashboard loads
 - [ ] The MCP tools work: start a Claude Code session, confirm events appear in the dashboard
-- [ ] The `scripts/install.sh` `OWNER/REPO` placeholder is updated to the real GitHub repo
 - [ ] The `scripts/install.ps1` `$Repo` placeholder is updated to the real GitHub repo
 
 ---
