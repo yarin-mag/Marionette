@@ -5,7 +5,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$Repo$Repo       = "yarin-mag/Marrionet"   # ← replace with your GitHub owner/repo
+$Repo       = "yarin-mag/Marrionet"
 $InstallDir = "$env:LOCALAPPDATA\marionette"
 $Platform   = "windows-x64"
 
