@@ -62,7 +62,16 @@ $sharedTarget = "$ReleaseDir\node_modules\@marionette\shared"
 New-Item -ItemType Directory -Force $sharedTarget | Out-Null
 Copy-Item -Recurse -Force "packages\shared\dist\*" "$sharedTarget\"
 @"
-{ "name": "@marionette/shared", "version": "0.1.0", "type": "module", "main": "index.js", "exports": { ".": "./index.js" } }
+{
+  "name": "@marionette/shared",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./ids-node": "./ids-node.js"
+  }
+}
 "@ | Set-Content "$sharedTarget\package.json"
 
 # ── 5. Windows batch wrapper ──────────────────────────────────────────────────

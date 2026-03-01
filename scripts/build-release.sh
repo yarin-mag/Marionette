@@ -85,7 +85,16 @@ mkdir -p "${SHARED_TARGET}"
 cp -r packages/shared/dist/. "${SHARED_TARGET}/"
 # Write a minimal package.json so Node resolves the package
 cat > "${SHARED_TARGET}/package.json" <<'EOF'
-{ "name": "@marionette/shared", "version": "0.1.0", "type": "module", "main": "index.js", "exports": { ".": "./index.js" } }
+{
+  "name": "@marionette/shared",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./ids-node": "./ids-node.js"
+  }
+}
 EOF
 
 # ── 5. Shell wrapper (macOS / Linux) ─────────────────────────────────────────
