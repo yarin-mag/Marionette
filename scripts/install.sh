@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Marionette one-liner installer for macOS and Linux
-# Usage: curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/yarin-mag/Marrionet/master/scripts/install.sh | bash
 set -euo pipefail
 
-REPO="OWNER/REPO"          # ← replace with your GitHub owner/repo
+REPO="yarin-mag/Marrionet"
 INSTALL_DIR="/usr/local/lib/marionette"
 BIN_LINK="/usr/local/bin/marionette"
 

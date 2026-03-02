@@ -134,4 +134,4 @@ tar -czf "${ARCHIVE}" -C release marionette
 
 echo "==> Done! Archive: ${ARCHIVE}"
 echo "    Contents:"
-tar -tzf "${ARCHIVE}" | head -30
+tar -tzf "${ARCHIVE}" | head -30 || true
