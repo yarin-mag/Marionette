@@ -108,7 +108,10 @@ if [ "$NODE_MAJOR" != "20" ]; then
   echo "Fix:  nvm install 20 && nvm use 20   or   https://nodejs.org/en/download" >&2
   exit 1
 fi
-exec node "$(dirname "$0")/../dist/cli.js" "$@"
+# Resolve symlinks so dirname points to the real bin/ directory, not the symlink location
+SELF="$0"
+while [ -L "$SELF" ]; do SELF="$(readlink "$SELF")"; done
+exec node "$(dirname "$SELF")/../dist/cli.js" "$@"
 WRAPPER
 chmod +x "${RELEASE_DIR}/bin/marionette"
 
