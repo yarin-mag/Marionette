@@ -9,8 +9,20 @@ permissions:
   contents: write
 
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+
   build:
     name: Build ${{ matrix.artifact }}
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
@@ -60,4 +72,3 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.upload_file }}
-          generate_release_notes: true
