@@ -43,7 +43,16 @@ elif [ "$OS" = "linux" ]; then
   echo "==> Removed systemd user services"
 fi
 
-# ── 2. Remove ANTHROPIC_BASE_URL from shell rc files ──────────────────────────
+# ── 2. Kill any running processes on ports 8787 and 8788 ─────────────────────
+for PORT in 8787 8788; do
+  PIDS=$(lsof -ti tcp:$PORT 2>/dev/null) || true
+  if [ -n "$PIDS" ]; then
+    echo "$PIDS" | xargs kill -9 2>/dev/null || true
+    echo "==> Killed process(es) on port $PORT"
+  fi
+done
+
+# ── 3. Remove ANTHROPIC_BASE_URL from shell rc files ──────────────────────────
 MARKER="# Added by Marionette"
 ENV_LINE='export ANTHROPIC_BASE_URL="http://localhost:8788"'
 for RC in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile"; do
@@ -53,7 +62,7 @@ for RC in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile"; do
   fi
 done
 
-# ── 3. Remove MCP server registration ─────────────────────────────────────────
+# ── 4. Remove MCP server registration ─────────────────────────────────────────
 if [ -f "$MCP_SETTINGS" ] && command -v node &>/dev/null; then
   node -e "
     const fs = require('fs');
@@ -69,7 +78,7 @@ if [ -f "$MCP_SETTINGS" ] && command -v node &>/dev/null; then
   " "$MCP_SETTINGS"
 fi
 
-# ── 4. Remove hooks from Claude Code settings ──────────────────────────────────
+# ── 5. Remove hooks from Claude Code settings ──────────────────────────────────
 if [ -f "$SETTINGS" ] && command -v node &>/dev/null; then
   node -e "
     const fs = require('fs');
@@ -86,7 +95,7 @@ if [ -f "$SETTINGS" ] && command -v node &>/dev/null; then
   " "$SETTINGS"
 fi
 
-# ── 5. Remove binary symlink and install directory ────────────────────────────
+# ── 6. Remove binary symlink and install directory ────────────────────────────
 if [ -L "$BIN_LINK" ] || [ -f "$BIN_LINK" ]; then
   sudo rm -f "$BIN_LINK"
   echo "==> Removed $BIN_LINK"
@@ -96,7 +105,7 @@ if [ -d "$INSTALL_DIR" ]; then
   echo "==> Removed $INSTALL_DIR"
 fi
 
-# ── 6. Remove logs directory ───────────────────────────────────────────────────
+# ── 7. Remove logs directory ───────────────────────────────────────────────────
 if [ -d "$LOGS_DIR" ]; then
   rm -rf "$LOGS_DIR"
   echo "==> Removed $LOGS_DIR"

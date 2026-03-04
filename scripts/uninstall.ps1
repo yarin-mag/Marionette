@@ -21,7 +21,18 @@ foreach ($task in @("Marionette", "MarionetteProxy")) {
     }
 }
 
-# ── 2. Remove ANTHROPIC_BASE_URL user environment variable ────────────────────
+# ── 2. Kill any running processes on ports 8787 and 8788 ─────────────────────
+foreach ($port in @(8787, 8788)) {
+    $conns = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
+    if ($conns) {
+        $conns.OwningProcess | Sort-Object -Unique | ForEach-Object {
+            Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue
+        }
+        Write-Host "==> Killed process(es) on port $port"
+    }
+}
+
+# ── 3. Remove ANTHROPIC_BASE_URL user environment variable ────────────────────
 $existing = [Environment]::GetEnvironmentVariable("ANTHROPIC_BASE_URL", "User")
 if ($null -ne $existing) {
     [Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", $null, "User")
@@ -29,7 +40,7 @@ if ($null -ne $existing) {
     Write-Host "==> Removed ANTHROPIC_BASE_URL user environment variable"
 }
 
-# ── 3. Remove bin dir from user PATH ─────────────────────────────────────────
+# ── 4. Remove bin dir from user PATH ─────────────────────────────────────────
 $binDir = "$InstallDir\bin"
 $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 if ($currentPath -like "*$binDir*") {
@@ -41,7 +52,7 @@ if ($currentPath -like "*$binDir*") {
     Write-Host "==> Removed $binDir from user PATH"
 }
 
-# ── 4. Remove MCP server registration ────────────────────────────────────────
+# ── 5. Remove MCP server registration ────────────────────────────────────────
 if (Test-Path $McpSettings) {
     try {
         $mcp = Get-Content $McpSettings -Raw | ConvertFrom-Json -AsHashtable
@@ -55,7 +66,7 @@ if (Test-Path $McpSettings) {
     }
 }
 
-# ── 5. Remove hooks from Claude Code settings ─────────────────────────────────
+# ── 6. Remove hooks from Claude Code settings ─────────────────────────────────
 if (Test-Path $Settings) {
     try {
         $cfg = Get-Content $Settings -Raw | ConvertFrom-Json -AsHashtable
@@ -72,7 +83,7 @@ if (Test-Path $Settings) {
     }
 }
 
-# ── 6. Remove install directory ───────────────────────────────────────────────
+# ── 7. Remove install directory ───────────────────────────────────────────────
 if (Test-Path $InstallDir) {
     Remove-Item -Recurse -Force $InstallDir
     Write-Host "==> Removed $InstallDir"

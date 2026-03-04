@@ -461,6 +461,23 @@ async function startProxy(): Promise<void> {
 // stop
 // ---------------------------------------------------------------------------
 
+async function killPortProcesses(): Promise<void> {
+  const os = platform();
+  const ports = [config.port, 8788];
+  if (os === "darwin" || os === "linux") {
+    for (const port of ports) {
+      await execAsync(`lsof -ti tcp:${port} | xargs kill -9`).catch(() => {});
+    }
+    console.log("✓ Killed any running processes on ports 8787/8788");
+  } else if (os === "win32") {
+    for (const port of ports) {
+      const ps = `$ids = (Get-NetTCPConnection -LocalPort ${port} -ErrorAction SilentlyContinue).OwningProcess; if ($ids) { $ids | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue } }`;
+      await execAsync(`powershell -Command "${ps}"`).catch(() => {});
+    }
+    console.log("✓ Killed any running processes on ports 8787/8788");
+  }
+}
+
 async function stop(): Promise<void> {
   const os = platform();
   if (os === "darwin") {
@@ -483,6 +500,7 @@ async function stop(): Promise<void> {
   } else {
     console.log("Auto-start not configured on this platform.");
   }
+  await killPortProcesses();
   await removeShellEnv();
 }
 
