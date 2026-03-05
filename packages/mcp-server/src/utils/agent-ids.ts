@@ -35,7 +35,7 @@ export function detectTerminalName(): string {
     }
   }
   // Terminal-specific env var fallbacks
-  if (process.env.WARP_FEATURES || process.env.WARP_THEMES_DIR) return "Warp";
+  if (process.env.WARP_FEATURES || process.env.WARP_THEMES_DIR || process.env.WARP_IS_LOCAL_SHELL_SESSION) return "Warp";
   if (process.env.VSCODE_PID || process.env.VSCODE_IPC_HOOK_CLI) return "VS Code";
   if (process.env.TMUX)    return "tmux";
   if (process.env.STY)     return "screen";
@@ -57,7 +57,7 @@ export function detectTerminalName(): string {
 export function writeTempFile(agentId: string, source: 'cli' | 'vscode' | 'mcp', cwd: string): void {
   const filePath = agentTempFilePath(cwd);
   try {
-    fs.writeFileSync(filePath, `${agentId}\n${source}`, { encoding: "utf8", mode: 0o600 });
+    fs.writeFileSync(filePath, `${agentId}\n${source}\n${detectTerminalName()}`, { encoding: "utf8", mode: 0o600 });
     logger.info(`Wrote agent temp file: ${filePath}`);
   } catch (err) {
     logger.warn(`Could not write agent temp file ${filePath}: ${err}`);

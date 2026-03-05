@@ -74,7 +74,7 @@ const STALE_STATUSES = new Set<AgentStatus>(["working", "awaiting_input", "start
  * Line 1 = agentId, line 2 = source ("cli" | "vscode" | "mcp").
  * Returns null if the file is absent or malformed — caller falls back to sessionId derivation.
  */
-async function readMcpTempFile(cwd: string): Promise<{ agentId: string; source: AgentMetadata['source'] } | null> {
+async function readMcpTempFile(cwd: string): Promise<{ agentId: string; source: AgentMetadata['source']; terminal?: string } | null> {
   try {
     const content = await readFile(agentTempFilePath(cwd), "utf8");
     const lines = content.trim().split("\n");
@@ -82,7 +82,8 @@ async function readMcpTempFile(cwd: string): Promise<{ agentId: string; source: 
     if (!agentId?.startsWith("agent_")) return null;
     const source: AgentMetadata['source'] =
       (lines[1] === "vscode" || lines[1] === "mcp") ? lines[1] : "cli";
-    return { agentId, source };
+    const terminal = lines[2]?.trim() || undefined;
+    return { agentId, source, terminal };
   } catch {
     return null; // temp file absent (no MCP server) — fall back
   }
@@ -178,7 +179,7 @@ async function initializeFileState(
   const initialEvents: MarionetteEvent[] = [];
   if (isMainSessionFile(filePath)) {
     initialEvents.push(
-      buildConversationStartedEvent(agentId, sessionId, filePath, entry.cwd, entry.gitBranch, source)
+      buildConversationStartedEvent(agentId, sessionId, filePath, entry.cwd, entry.gitBranch, source, tempFile?.terminal)
     );
   }
   // Emit agent.started for subagent files on initialization

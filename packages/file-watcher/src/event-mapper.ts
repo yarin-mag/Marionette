@@ -116,7 +116,8 @@ export function buildConversationStartedEvent(
   filePath: string,
   cwd?: string,
   gitBranch?: string,
-  source?: AgentMetadata['source']
+  source?: AgentMetadata['source'],
+  terminal?: string
 ): MarionetteEvent {
   const runId = deriveSessionRunId(sessionId);
 
@@ -131,6 +132,7 @@ export function buildConversationStartedEvent(
       name: cwd ? basename(cwd) : "claude-session",
       cwd,
       source: source ?? "cli",
+      ...(terminal ? { terminal } : {}),
     },
     payload: {
       sessionId,
