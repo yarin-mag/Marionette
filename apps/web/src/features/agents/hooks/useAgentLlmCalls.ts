@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { calculateCost, getPricingForModel } from "@marionette/shared";
 import type { ModelPricing } from "@marionette/shared";
+import { useDemoMode } from "../../../hooks/useDemoMode";
+import { DEMO_LLM_CALLS } from "../../../lib/demo-data";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8787";
 
@@ -45,6 +47,7 @@ interface UseAgentLlmCallsResult {
 }
 
 export function useAgentLlmCalls(agentId: string): UseAgentLlmCallsResult {
+  const isDemoMode = useDemoMode();
   const [stats, setStats] = useState<AgentLlmStats>(() => ({
     totalCostUsd: 0,
     lastModel: null,
@@ -59,6 +62,24 @@ export function useAgentLlmCalls(agentId: string): UseAgentLlmCallsResult {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (isDemoMode) {
+      const calls = DEMO_LLM_CALLS[agentId] ?? [];
+      const lastModel = calls.length > 0 ? (calls[0].payload?.model ?? null) : null;
+      const pricing = getPricingForModel(lastModel);
+      let totalCostUsd = 0, totalInputTokens = 0, totalOutputTokens = 0, totalCacheWriteTokens = 0, totalCacheReadTokens = 0;
+      for (const c of calls) {
+        const t = c.tokens ?? {};
+        totalInputTokens += t.input_tokens ?? 0;
+        totalOutputTokens += t.output_tokens ?? 0;
+        totalCacheWriteTokens += t.cache_creation_input_tokens ?? 0;
+        totalCacheReadTokens += t.cache_read_input_tokens ?? 0;
+        totalCostUsd += t.cost_usd ?? 0;
+      }
+      setStats({ totalCostUsd, lastModel, callCount: calls.length, calls, pricing, totalInputTokens, totalOutputTokens, totalCacheWriteTokens, totalCacheReadTokens });
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     const fetchLlmCalls = async () => {
@@ -114,7 +135,7 @@ export function useAgentLlmCalls(agentId: string): UseAgentLlmCallsResult {
     return () => {
       cancelled = true;
     };
-  }, [agentId]);
+  }, [agentId, isDemoMode]);
 
   return { stats, isLoading };
 }

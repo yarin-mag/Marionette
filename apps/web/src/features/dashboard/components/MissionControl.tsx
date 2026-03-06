@@ -19,6 +19,8 @@ import { useUserPreferences } from "../../../hooks/use-user-preferences";
 import { useAgentNotifications } from "../../../hooks/use-agent-notifications";
 import { useMissionControlState } from "../hooks/useMissionControlState";
 import { useAgentsStore } from "../../agents/stores/agents.store";
+import { useDemoMode } from "../../../hooks/useDemoMode";
+import { DemoBanner } from "../../../components/ui/demo-banner";
 
 type ViewMode = "grid" | "calendar" | "table" | "kanban" | "analytics" | "compare";
 
@@ -45,6 +47,7 @@ export function MissionControl() {
 
   const { preferences } = useUserPreferences();
   const { compareSet } = useAgentsStore();
+  const isDemoMode = useDemoMode();
   useAgentNotifications(agents);
 
   if (loading && agents.length === 0) {
@@ -73,6 +76,7 @@ export function MissionControl() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {isDemoMode && <DemoBanner />}
       <MissionControlHeader
         wsConnected={wsConnected}
         agentCount={agents.length}

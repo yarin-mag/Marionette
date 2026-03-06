@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { API_URL } from "../../../lib/constants";
+import { useDemoMode } from "../../../hooks/useDemoMode";
+import { DEMO_ERRORS } from "../../../lib/demo-data";
 
 export type AgentError = {
   id: number;
@@ -17,6 +19,7 @@ export type AgentError = {
  * Maps API fields (ts → timestamp, error object → string) to a clean shape.
  */
 export function useAgentErrors(agentId: string, enabled: boolean) {
+  const isDemoMode = useDemoMode();
   return useQuery<AgentError[]>({
     queryKey: ["agent-errors", agentId],
     queryFn: () =>
@@ -36,7 +39,8 @@ export function useAgentErrors(agentId: string, enabled: boolean) {
             timestamp: (e.ts as string) ?? (e.created_at as string) ?? "",
           }))
         ),
-    enabled,
+    enabled: enabled && !isDemoMode,
+    initialData: isDemoMode ? (DEMO_ERRORS[agentId] ?? []) : undefined,
     staleTime: 10_000,
   });
 }

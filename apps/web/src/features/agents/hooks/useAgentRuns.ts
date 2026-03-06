@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useDemoMode } from '../../../hooks/useDemoMode';
+import { DEMO_RUNS } from '../../../lib/demo-data';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
@@ -18,10 +20,17 @@ interface UseAgentRunsResult {
 }
 
 export function useAgentRuns(agentId: string): UseAgentRunsResult {
+  const isDemoMode = useDemoMode();
   const [runs, setRuns] = useState<RunHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setRuns(DEMO_RUNS[agentId] ?? []);
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     const fetchRuns = async () => {
@@ -40,7 +49,7 @@ export function useAgentRuns(agentId: string): UseAgentRunsResult {
 
     fetchRuns();
     return () => { cancelled = true; };
-  }, [agentId]);
+  }, [agentId, isDemoMode]);
 
   return { runs, isLoading };
 }

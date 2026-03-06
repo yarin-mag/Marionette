@@ -6,8 +6,15 @@ import { wsService } from "../../../services/ws.service";
 import { dbService } from "../../../services/db.service";
 import { QUERY_KEYS, STALE_TIME } from "../../../lib/constants";
 import { useAgentsStore } from "../stores/agents.store";
+import { useDemoMode } from "../../../hooks/useDemoMode";
+import { DEMO_AGENTS } from "../../../lib/demo-data";
 
 export function useAgents(statusFilter?: AgentStatus) {
+  const isDemoMode = useDemoMode();
+  if (isDemoMode) {
+    const agents = statusFilter ? DEMO_AGENTS.filter((a) => a.status === statusFilter) : DEMO_AGENTS;
+    return { agents, loading: false, error: null, refetch: async () => {} };
+  }
   const queryClient = useQueryClient();
   const setAgents = useAgentsStore((state) => state.setAgents);
   const updateAgent = useAgentsStore((state) => state.updateAgent);

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ConversationTurn, TokenUsage } from '@marionette/shared';
+import { useDemoMode } from '../../../hooks/useDemoMode';
+import { DEMO_CONVERSATIONS } from '../../../lib/demo-data';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
@@ -14,11 +16,18 @@ interface UseAgentConversationResult {
 }
 
 export function useAgentConversation(agentId: string): UseAgentConversationResult {
+  const isDemoMode = useDemoMode();
   const [turns, setTurns] = useState<EnrichedConversationTurn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setTurns(DEMO_CONVERSATIONS[agentId] ?? []);
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     const fetchConversation = async () => {
@@ -37,7 +46,7 @@ export function useAgentConversation(agentId: string): UseAgentConversationResul
 
     fetchConversation();
     return () => { cancelled = true; };
-  }, [agentId]);
+  }, [agentId, isDemoMode]);
 
   return { turns, isLoading, error };
 }
