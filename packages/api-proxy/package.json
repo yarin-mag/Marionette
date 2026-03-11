@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@anthropic-ai/tokenizer": "^0.0.4",
     "@marionette/shared": "workspace:*"
   },
   "devDependencies": {

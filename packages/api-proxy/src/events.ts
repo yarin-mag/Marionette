@@ -1,4 +1,4 @@
-import type { MarionetteEvent } from "@marionette/shared";
+import type { MarionetteEvent, MessageTokenEntry } from "@marionette/shared";
 import { config } from "./config.js";
 
 interface LlmCallEventParams {
@@ -17,6 +17,7 @@ interface LlmCallEventParams {
   hasSystemPrompt: boolean;
   toolsCount: number;
   costUsd: number;
+  messageTokens: MessageTokenEntry[];
 }
 
 export function buildLlmCallEvent(params: LlmCallEventParams): MarionetteEvent {
@@ -48,6 +49,7 @@ export function buildLlmCallEvent(params: LlmCallEventParams): MarionetteEvent {
       has_system_prompt: params.hasSystemPrompt,
       tools_count: params.toolsCount,
       source: "api-proxy",
+      message_tokens: params.messageTokens,
     },
   };
 }

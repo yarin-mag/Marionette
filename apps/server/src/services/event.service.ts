@@ -1,5 +1,6 @@
-import type { MarionetteEvent, AgentStatus } from "@marionette/shared";
+import type { MarionetteEvent, AgentStatus, MessageTokenEntry } from "@marionette/shared";
 import { EventRepository } from "../repositories/event.repository.js";
+import { MessageTokensRepository } from "../repositories/message-tokens.repository.js";
 import { AgentService } from "./agent.service.js";
 import { DatabaseClient } from "../db.js";
 import { logger } from "../utils/logger.js";
@@ -20,6 +21,7 @@ export interface BatchResult {
  */
 export class EventService {
   private repository = new EventRepository();
+  private messageTokensRepository = new MessageTokensRepository();
   private agentService: AgentService;
 
   constructor(agentService?: AgentService) {
@@ -67,6 +69,24 @@ export class EventService {
 
     // Insert event into database
     await this.repository.insert({ ...effectiveEvent, ts });
+
+    // For llm.call events from the proxy, persist the per-message token breakdown
+    if (
+      effectiveEvent.type === "llm.call" &&
+      effectiveEvent.agent_id &&
+      effectiveEvent.run_id &&
+      Array.isArray(effectiveEvent.payload?.message_tokens) &&
+      (effectiveEvent.payload.message_tokens as MessageTokenEntry[]).length > 0
+    ) {
+      const model = effectiveEvent.payload.model as string | undefined;
+      await this.messageTokensRepository.insertBatch(
+        effectiveEvent.agent_id,
+        effectiveEvent.run_id,
+        ts,
+        model,
+        effectiveEvent.payload.message_tokens as MessageTokenEntry[]
+      );
+    }
   }
 
   /**

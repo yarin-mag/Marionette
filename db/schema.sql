@@ -75,3 +75,21 @@ CREATE TABLE IF NOT EXISTS user_preferences (
   value TEXT NOT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Per-message token counts: one row per user/assistant message
+-- Populated by the API proxy (single source of truth for token counting)
+CREATE TABLE IF NOT EXISTS message_tokens (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  agent_id    TEXT NOT NULL,
+  run_id      TEXT NOT NULL,
+  msg_index   INTEGER NOT NULL,
+  role        TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  tokens      INTEGER NOT NULL,
+  cost_usd    REAL,
+  model       TEXT,
+  ts          TEXT NOT NULL,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_msg_tokens_agent ON message_tokens(agent_id);
+CREATE INDEX IF NOT EXISTS idx_msg_tokens_run   ON message_tokens(run_id);

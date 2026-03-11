@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import type { MarionetteEvent, AgentSnapshot, AgentStatus } from "@marionette/shared";
 import { AgentRepository } from "../repositories/agent.repository.js";
+import { MessageTokensRepository } from "../repositories/message-tokens.repository.js";
 import { logger } from "../utils/logger.js";
 
 const MARIONETTE_DIR  = join(homedir(), ".marionette");
@@ -27,6 +28,7 @@ function appendExcludedFiles(filePaths: string[]): void {
  */
 export class AgentService {
   private repository = new AgentRepository();
+  private messageTokensRepository = new MessageTokensRepository();
 
   /**
    * Upsert agent from event
@@ -116,6 +118,7 @@ export class AgentService {
       .filter(Boolean) as string[];
 
     const count = await this.repository.deleteAll();
+    await this.messageTokensRepository.deleteAll();
     appendExcludedFiles(sourcePaths);
     logger.info(`Deleted ${count} agent(s)`);
     return count;
@@ -129,6 +132,7 @@ export class AgentService {
     const sourceFile = agent?.source_file;
 
     const count = await this.repository.deleteById(agentId);
+    await this.messageTokensRepository.deleteByAgent(agentId);
     if (sourceFile) appendExcludedFiles([sourceFile]);
     return count;
   }

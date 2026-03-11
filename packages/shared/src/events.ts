@@ -32,6 +32,15 @@ export type TaskStatus =
   | "failed"
   | "cancelled";
 
+/** A single message's token count — produced by the API proxy tokenizer */
+export type MessageTokenEntry = {
+  /** Zero-based position of this message in the full conversation */
+  msg_index: number;
+  role: 'user' | 'assistant';
+  tokens: number;
+  cost_usd?: number;
+};
+
 export type TokenUsage = {
   /** tokens sent to the LLM (best-effort) */
   input_tokens?: number;
