@@ -49,6 +49,14 @@ if (Test-Path $tmpDir) { Remove-Item -Recurse -Force $tmpDir }
 Expand-Archive -Path $tmpZip -DestinationPath $tmpDir
 Remove-Item $tmpZip
 
+# ── Stop running marionette before replacing files ────────────────────────────
+$marionetteCmd = Get-Command marionette -ErrorAction SilentlyContinue
+if ($marionetteCmd) {
+    Write-Host "==> Stopping any running Marionette processes..."
+    & marionette stop 2>$null
+    Start-Sleep -Seconds 2
+}
+
 # ── Install ───────────────────────────────────────────────────────────────────
 Write-Host "==> Installing to $InstallDir"
 if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
