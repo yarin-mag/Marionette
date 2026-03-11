@@ -50,8 +50,7 @@ Expand-Archive -Path $tmpZip -DestinationPath $tmpDir
 Remove-Item $tmpZip
 
 # ── Stop running marionette before replacing files ────────────────────────────
-$marionetteCmd = Get-Command marionette -ErrorAction SilentlyContinue
-if ($marionetteCmd) {
+if (Get-Command marionette -ErrorAction SilentlyContinue) {
     Write-Host "==> Stopping any running Marionette processes..."
     & marionette stop 2>$null
     Start-Sleep -Seconds 2
@@ -59,7 +58,19 @@ if ($marionetteCmd) {
 
 # ── Install ───────────────────────────────────────────────────────────────────
 Write-Host "==> Installing to $InstallDir"
-if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
+if (Test-Path $InstallDir) {
+    try {
+        Remove-Item -Recurse -Force $InstallDir -ErrorAction Stop
+    } catch {
+        # Files still locked (e.g. better_sqlite3.node held by a running process).
+        # Windows allows renaming a directory even when files inside are open.
+        Write-Host "==> Old installation is locked — moving it aside..."
+        $backupDir = "${InstallDir}.old"
+        if (Test-Path $backupDir) { Remove-Item -Recurse -Force $backupDir -ErrorAction SilentlyContinue }
+        Rename-Item $InstallDir $backupDir
+        Write-Host "    (${backupDir} can be deleted after restarting)"
+    }
+}
 Move-Item "$tmpDir\marionette" $InstallDir
 Remove-Item $tmpDir
 
