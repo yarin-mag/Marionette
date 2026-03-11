@@ -6,7 +6,10 @@ import { config } from "../config.js";
 import { collectBody } from "../utils.js";
 import type { ServerResponse } from "node:http";
 
-const HOP_BY_HOP_HEADERS = new Set(["connection", "keep-alive", "proxy-authorization"]);
+// Also strip accept-encoding: the proxy needs to read the response body to parse
+// SSE usage fields. If we forward accept-encoding, Anthropic may gzip the stream
+// and our accumulation buffer will contain compressed binary, not parseable SSE text.
+const HOP_BY_HOP_HEADERS = new Set(["connection", "keep-alive", "proxy-authorization", "accept-encoding"]);
 
 export function filterHeaders(
   headers: Record<string, string | string[] | undefined>
