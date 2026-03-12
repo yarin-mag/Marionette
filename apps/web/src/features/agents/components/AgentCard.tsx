@@ -56,12 +56,6 @@ function AgentErrorList({ agentId }: { agentId: string }) {
  * @example
  * <AgentCard agent={agentData} onClick={() => openDetail(agentData.agent_id)} />
  */
-function formatCostCompact(usd: number): string {
-  if (!isFinite(usd) || usd === 0) return "$0.00";
-  if (usd < 0.001) return `$${usd.toFixed(5)}`;
-  if (usd < 0.01) return `$${usd.toFixed(4)}`;
-  return `$${usd.toFixed(3)}`;
-}
 
 export const AgentCard = memo(function AgentCard({ agent, onClick }: AgentCardProps) {
   const { displayName, hasCustomName, statusConfig, isDisconnected } =
@@ -217,11 +211,6 @@ export const AgentCard = memo(function AgentCard({ agent, onClick }: AgentCardPr
               icon={Zap}
               iconColor="text-amber-500"
             />
-            {llmStats.totalCostUsd > 0 && (
-              <p className="text-xs text-muted-foreground text-center tabular-nums">
-                {formatCostCompact(llmStats.totalCostUsd)}
-              </p>
-            )}
             {agent.status === "working" && agent.session_start && (() => {
               const burnRate = formatBurnRate(
                 agent.session_tokens,

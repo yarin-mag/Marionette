@@ -54,6 +54,14 @@ export class MessageTokensRepository extends BaseRepository {
     );
   }
 
+  /** Fetch per-message token rows for an agent filtered by role, grouped by run_id and ordered by msg_index. */
+  async findByAgentAndRole(agentId: string, role: "user" | "assistant"): Promise<MessageTokenRow[]> {
+    return this.query<MessageTokenRow>(
+      `SELECT * FROM message_tokens WHERE agent_id = $1 AND role = $2 ORDER BY run_id, msg_index ASC`,
+      [agentId, role]
+    );
+  }
+
   /** Delete all token rows for a specific agent. */
   async deleteByAgent(agentId: string): Promise<void> {
     await this.query(`DELETE FROM message_tokens WHERE agent_id = $1`, [agentId]);

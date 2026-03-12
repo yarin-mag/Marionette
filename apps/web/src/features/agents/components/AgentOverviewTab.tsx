@@ -1,5 +1,5 @@
 import type { AgentSnapshot } from "@marionette/shared";
-import { Clock, Zap, TrendingUp, XCircle, Activity, FolderOpen, Terminal, DollarSign } from "lucide-react";
+import { Clock, Zap, TrendingUp, XCircle, Activity, FolderOpen, Terminal } from "lucide-react";
 import { GlassCard } from "../../../components/ui/glass-card";
 import { GradientBorder } from "../../../components/ui/gradient-border";
 import { FancyStatCard } from "../../../components/ui/fancy-stat-card";
@@ -18,17 +18,6 @@ interface AgentOverviewTabProps {
   agent: AgentSnapshot;
 }
 
-function formatCost(usd: number): string {
-  if (!isFinite(usd) || usd === 0) return "$0.00";
-  if (usd < 0.001) return `$${usd.toFixed(6)}`;
-  if (usd < 0.01) return `$${usd.toFixed(4)}`;
-  return `$${usd.toFixed(3)}`;
-}
-
-function formatCostRow(tokens: number, pricePerMillion: number): string {
-  const cost = (tokens * pricePerMillion) / 1_000_000;
-  return formatCost(cost);
-}
 
 export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
   const { stats: llmStats } = useAgentLlmCalls(agent.agent_id);
@@ -92,61 +81,6 @@ export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
           className="p-4"
         />
       </div>
-
-      {/* Cost Breakdown */}
-      {llmStats.callCount > 0 && (
-        <GlassCard className="p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500">
-              <DollarSign className="h-4 w-4 text-white" />
-            </div>
-            <h3 className="font-semibold">Cost</h3>
-            {llmStats.lastModel && (
-              <span className="text-xs text-muted-foreground font-mono ml-auto">{llmStats.lastModel}</span>
-            )}
-          </div>
-
-          <div className="text-sm">
-            <table className="w-full text-xs">
-              <tbody>
-                <tr className="border-b border-border/50">
-                  <td className="py-1.5 text-muted-foreground">Input</td>
-                  <td className="py-1.5 text-right tabular-nums">{llmStats.totalInputTokens.toLocaleString()}</td>
-                  <td className="py-1.5 text-right tabular-nums pl-4">{formatCostRow(llmStats.totalInputTokens, llmStats.pricing.inputPerMillion)}</td>
-                </tr>
-                <tr className="border-b border-border/50">
-                  <td className="py-1.5 text-muted-foreground">Output</td>
-                  <td className="py-1.5 text-right tabular-nums">{llmStats.totalOutputTokens.toLocaleString()}</td>
-                  <td className="py-1.5 text-right tabular-nums pl-4">{formatCostRow(llmStats.totalOutputTokens, llmStats.pricing.outputPerMillion)}</td>
-                </tr>
-                {llmStats.totalCacheWriteTokens > 0 && (
-                  <tr className="border-b border-border/50">
-                    <td className="py-1.5 text-muted-foreground">Cache write</td>
-                    <td className="py-1.5 text-right tabular-nums">{llmStats.totalCacheWriteTokens.toLocaleString()}</td>
-                    <td className="py-1.5 text-right tabular-nums pl-4">{formatCostRow(llmStats.totalCacheWriteTokens, llmStats.pricing.cacheWritePerMillion)}</td>
-                  </tr>
-                )}
-                {llmStats.totalCacheReadTokens > 0 && (
-                  <tr className="border-b border-border/50">
-                    <td className="py-1.5 text-muted-foreground">Cache read</td>
-                    <td className="py-1.5 text-right tabular-nums">{llmStats.totalCacheReadTokens.toLocaleString()}</td>
-                    <td className="py-1.5 text-right tabular-nums pl-4">{formatCostRow(llmStats.totalCacheReadTokens, llmStats.pricing.cacheReadPerMillion)}</td>
-                  </tr>
-                )}
-                <tr>
-                  <td className="pt-2 font-semibold" colSpan={2}>Total</td>
-                  <td className="pt-2 text-right tabular-nums pl-4 font-semibold text-emerald-500">{formatCost(llmStats.totalCostUsd)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-            ${llmStats.pricing.inputPerMillion}/M input · ${llmStats.pricing.outputPerMillion}/M output · ${llmStats.pricing.cacheWritePerMillion}/M cache write · ${llmStats.pricing.cacheReadPerMillion}/M cache read
-            {" · "}Updated Feb 2026 — edit <span className="font-mono">packages/shared/src/pricing.ts</span> to update rates
-          </p>
-        </GlassCard>
-      )}
 
       {/* Environment */}
       <GlassCard className="p-4 space-y-3">
@@ -255,8 +189,6 @@ export function AgentOverviewTab({ agent }: AgentOverviewTabProps) {
                 <span className="text-muted-foreground tabular-nums shrink-0">{formatTime(run.started_at)}</span>
                 <span className="text-muted-foreground/60">·</span>
                 <span className="tabular-nums shrink-0">{formatTokens(run.total_tokens)}</span>
-                <span className="text-muted-foreground/60">·</span>
-                <span className="text-emerald-500/80 tabular-nums shrink-0">{formatCost(run.total_cost_usd)}</span>
                 {run.ended_at && run.duration_ms != null && (
                   <>
                     <span className="text-muted-foreground/60">·</span>

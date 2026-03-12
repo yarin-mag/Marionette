@@ -8,12 +8,6 @@ import { useAgentsStore } from "../../agents/stores/agents.store";
 import { useAgentLlmCalls } from "../../agents/hooks/useAgentLlmCalls";
 import { useAgentDisplay } from "../../agents/hooks/useAgentDisplay";
 
-function formatCostFull(usd: number): string {
-  if (!isFinite(usd) || usd === 0) return "$0.0000";
-  if (usd < 0.0001) return `$${usd.toFixed(6)}`;
-  if (usd < 0.01) return `$${usd.toFixed(4)}`;
-  return `$${usd.toFixed(3)}`;
-}
 
 interface CompareAgentColumnProps {
   agent: AgentSnapshot;
@@ -23,7 +17,7 @@ interface CompareAgentColumnProps {
 
 function CompareAgentColumn({ agent, onRemove, onOpenDetails }: CompareAgentColumnProps) {
   const { displayName, statusConfig } = useAgentDisplay(agent);
-  const { stats: llmStats, isLoading } = useAgentLlmCalls(agent.agent_id);
+  const { stats: llmStats } = useAgentLlmCalls(agent.agent_id);
 
   return (
     <div className="flex flex-col gap-4 min-w-[240px] rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -86,18 +80,6 @@ function CompareAgentColumn({ agent, onRemove, onOpenDetails }: CompareAgentColu
             <span className="text-xs">Tokens</span>
           </div>
           <p className="text-lg font-semibold tabular-nums">{formatTokens(agent.session_tokens)}</p>
-        </div>
-
-        <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
-          <div className="flex items-center gap-1 text-muted-foreground mb-1">
-            <Activity className="h-3 w-3 text-emerald-400" />
-            <span className="text-xs">Cost</span>
-          </div>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">…</p>
-          ) : (
-            <p className="text-lg font-semibold tabular-nums">{formatCostFull(llmStats.totalCostUsd)}</p>
-          )}
         </div>
 
         <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">

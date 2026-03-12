@@ -5,13 +5,6 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { EnrichedConversationTurn } from '../hooks/useAgentConversation';
 
-function formatCost(usd: number): string {
-  if (!isFinite(usd) || usd === 0) return "$0.00";
-  if (usd < 0.001) return `$${usd.toFixed(6)}`;
-  if (usd < 0.01) return `$${usd.toFixed(4)}`;
-  return `$${usd.toFixed(3)}`;
-}
-
 interface ConversationMessageProps {
   turn: EnrichedConversationTurn;
 }
@@ -112,14 +105,19 @@ export function ConversationMessage({ turn }: ConversationMessageProps) {
             {formatTime(turn.timestamp)}
           </div>
 
-          {/* Token annotation — assistant messages only */}
-          {!isUser && turn.tokens && (
-            <div className="text-xs text-muted-foreground/60 mt-1 flex items-center gap-1.5 flex-wrap">
+          {/* Token annotation — both user and assistant messages */}
+          {turn.tokens && (
+            <div className={cn(
+              'text-xs mt-1 flex items-center gap-1.5 flex-wrap',
+              isUser ? 'opacity-70' : 'text-muted-foreground/60'
+            )}>
               <span>↑ {formatTokens(turn.tokens.input_tokens ?? 0)}</span>
-              <span className="opacity-40">·</span>
-              <span>↓ {formatTokens(turn.tokens.output_tokens ?? 0)}</span>
-              <span className="opacity-40">·</span>
-              <span className="text-emerald-500/70">{formatCost(turn.tokens.cost_usd ?? 0)}</span>
+              {(turn.tokens.output_tokens ?? 0) > 0 && (
+                <>
+                  <span className="opacity-40">·</span>
+                  <span>↓ {formatTokens(turn.tokens.output_tokens ?? 0)}</span>
+                </>
+              )}
             </div>
           )}
         </div>

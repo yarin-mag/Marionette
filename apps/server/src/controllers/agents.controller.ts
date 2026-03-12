@@ -3,6 +3,7 @@ import type { AgentStatus } from "@marionette/shared";
 import type { WebSocketService } from "../services/websocket.service.js";
 import { AgentService } from "../services/agent.service.js";
 import { EventRepository } from "../repositories/event.repository.js";
+import { MessageTokensRepository } from "../repositories/message-tokens.repository.js";
 import type { ConversationTurn } from "@marionette/shared";
 
 export class AgentsController {
@@ -75,10 +76,23 @@ export class AgentsController {
     const limit = Math.min(Number.isNaN(rawLimit) || rawLimit <= 0 ? 500 : rawLimit, 500);
 
     const eventRepo = new EventRepository();
-    const [turnEvents, llmEvents] = await Promise.all([
+    const msgTokensRepo = new MessageTokensRepository();
+    const [turnEvents, llmEvents, userTokenRows] = await Promise.all([
       eventRepo.findWithFilters({ agentId, type: "conversation.turn", limit }),
       eventRepo.findWithFilters({ agentId, type: "llm.call", limit: 1000 }),
+      msgTokensRepo.findByAgentAndRole(agentId, "user"),
     ]);
+
+    // Deduplicate turn events by payload.id (stable UUID from JSONL).
+    // Re-scanning JSONL files on restart produces duplicate DB rows; keep first occurrence.
+    const seenTurnIds = new Set<string>();
+    const dedupedTurnEvents = turnEvents.filter((e) => {
+      const id = (e.payload as Record<string, unknown> | null)?.id as string | undefined;
+      if (!id) return true;
+      if (seenTurnIds.has(id)) return false;
+      seenTurnIds.add(id);
+      return true;
+    });
 
     // Build per-run ordered list of llm.call token objects (sorted oldest→newest).
     // The Nth llm.call in a run corresponds to the Nth assistant conversation.turn in that run.
@@ -92,10 +106,18 @@ export class AgentsController {
       arr.sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0));
     }
 
-    // Track how many assistant turns we've matched per run so we can index into the llm list.
-    const assistantCountByRun = new Map<string, number>();
+    // Build per-run ordered list of user token entries (ordered by msg_index).
+    const userTokensByRun = new Map<string, Array<{ tokens: number }>>();
+    for (const row of userTokenRows) {
+      if (!userTokensByRun.has(row.run_id)) userTokensByRun.set(row.run_id, []);
+      userTokensByRun.get(row.run_id)!.push({ tokens: row.tokens });
+    }
 
-    const turns = turnEvents.reverse().flatMap((e) => {
+    // Track ordinal position per-role per-run for token matching.
+    const assistantCountByRun = new Map<string, number>();
+    const userCountByRun = new Map<string, number>();
+
+    const turns = dedupedTurnEvents.reverse().flatMap((e) => {
       const rawTurn = e.payload as Record<string, unknown> | null;
       if (!rawTurn || typeof rawTurn.role !== "string") return []; // skip malformed
       const turn = rawTurn as unknown as ConversationTurn;
@@ -104,12 +126,17 @@ export class AgentsController {
         assistantCountByRun.set(e.run_id, idx + 1);
         const llmEntry = llmByRun.get(e.run_id)?.[idx];
         if (llmEntry) return [{ ...turn, tokens: llmEntry.tokens }];
+      } else if (turn.role === "user" && e.run_id) {
+        const idx = userCountByRun.get(e.run_id) ?? 0;
+        userCountByRun.set(e.run_id, idx + 1);
+        const userEntry = userTokensByRun.get(e.run_id)?.[idx];
+        if (userEntry) return [{ ...turn, tokens: { input_tokens: userEntry.tokens, output_tokens: 0 } }];
       }
       return [turn];
     });
 
     // Compute conversation-level token totals across all matched llm.call events.
-    const allRunIds = [...new Set(turnEvents.map((e) => e.run_id).filter(Boolean))];
+    const allRunIds = [...new Set(dedupedTurnEvents.map((e) => e.run_id).filter(Boolean))];
     let totalInputTokens = 0, totalOutputTokens = 0, totalCostUsd = 0;
     for (const runId of allRunIds) {
       for (const entry of llmByRun.get(runId as string) ?? []) {
