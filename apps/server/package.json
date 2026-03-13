@@ -16,11 +16,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@clerk/express": "^2.0.4",
     "@marionette/shared": "workspace:*",
     "better-sqlite3": "^11.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "svix": "^1.87.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

@@ -93,3 +93,51 @@ CREATE TABLE IF NOT EXISTS message_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_msg_tokens_agent ON message_tokens(agent_id);
 CREATE INDEX IF NOT EXISTS idx_msg_tokens_run   ON message_tokens(run_id);
+
+-- ─── Cloud / multi-tenant tables ──────────────────────────────────────────────
+-- Only populated when CLOUD_MODE=true. Local installs leave all org/user columns NULL.
+
+-- Organizations: one row per company/team that signs up
+CREATE TABLE IF NOT EXISTS organizations (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  slug       TEXT UNIQUE NOT NULL,
+  plan       TEXT NOT NULL DEFAULT 'free',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Users: synced from Clerk via webhook. id = Clerk's user_id ("user_2abc...")
+-- role and org_id are ours — Clerk only handles authentication.
+CREATE TABLE IF NOT EXISTS users (
+  id         TEXT PRIMARY KEY,
+  email      TEXT UNIQUE NOT NULL,
+  name       TEXT,
+  org_id     TEXT REFERENCES organizations(id),
+  role       TEXT CHECK (role IN ('admin', 'developer')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email  ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_org_id ON users(org_id);
+
+-- Org API keys: used by local Marionette installs to report events to the cloud.
+-- The raw key is shown once at creation; only the SHA-256 hash is stored.
+CREATE TABLE IF NOT EXISTS org_api_keys (
+  id         TEXT PRIMARY KEY,
+  org_id     TEXT NOT NULL REFERENCES organizations(id),
+  key_hash   TEXT UNIQUE NOT NULL,
+  label      TEXT,
+  created_by TEXT REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_org_api_keys_org  ON org_api_keys(org_id);
+CREATE INDEX IF NOT EXISTS idx_org_api_keys_hash ON org_api_keys(key_hash);
+
+-- Add user/org attribution to existing tables (nullable — local events have none).
+-- IF NOT EXISTS requires SQLite 3.37+ (shipped with better-sqlite3 v11).
+ALTER TABLE events ADD COLUMN IF NOT EXISTS user_id TEXT REFERENCES users(id);
+ALTER TABLE events ADD COLUMN IF NOT EXISTS org_id  TEXT REFERENCES organizations(id);
+ALTER TABLE message_tokens ADD COLUMN IF NOT EXISTS user_id TEXT REFERENCES users(id);
+ALTER TABLE message_tokens ADD COLUMN IF NOT EXISTS org_id  TEXT REFERENCES organizations(id);

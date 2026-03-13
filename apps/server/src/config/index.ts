@@ -30,4 +30,12 @@ export const config = {
     defaultEventsLimit: 500,
     jsonBodyLimit: "2mb",
   },
+
+  cloud: {
+    // Clerk keys — required when CLOUD_MODE=true
+    clerkSecretKey: process.env.CLERK_SECRET_KEY || "",
+    clerkWebhookSecret: process.env.CLERK_WEBHOOK_SECRET || "",
+    // Set CLOUD_MODE=true to enable multi-tenant auth and org management
+    enabled: process.env.CLOUD_MODE === "true",
+  },
 } as const;

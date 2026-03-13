@@ -6,6 +6,9 @@ import { createEventsRoutes } from "./events.routes.js";
 import { createStatusRoutes } from "./status.routes.js";
 import { createPersonalTasksRoutes } from "./personal-tasks.routes.js";
 import { createPreferencesRoutes } from "./preferences.routes.js";
+import { createWebhookRoutes } from "./webhook.routes.js";
+import { createOrgRoutes } from "./org.routes.js";
+import { createIngestRoutes } from "./ingest.routes.js";
 import { CommandService } from "../services/command.service.js";
 
 export function createApiRoutes(wsService?: WebSocketService, commandService?: CommandService, eventService?: EventService) {
@@ -15,6 +18,11 @@ export function createApiRoutes(wsService?: WebSocketService, commandService?: C
   router.use("/events", createEventsRoutes(wsService, eventService));
   router.use("/personal-tasks", createPersonalTasksRoutes());
   router.use("/preferences", createPreferencesRoutes());
+
+  // Cloud routes — active when CLOUD_MODE=true (Clerk keys configured)
+  router.use("/webhooks", createWebhookRoutes());
+  router.use("/org", createOrgRoutes());
+  if (eventService) router.use("/", createIngestRoutes(eventService));
 
   // Status routes are mounted at root for backwards compatibility
   router.use("/", createStatusRoutes(wsService));
