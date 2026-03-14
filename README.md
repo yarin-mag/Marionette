@@ -13,17 +13,22 @@ A dashboard that captures every conversation, token count, and tool call across 
 
 ## Quick Start (for users)
 
-**macOS / Linux**
+**npm (any platform, Node.js 18+ required)**
+```bash
+npm install -g @marionette-app/cli && marionette setup
+```
+
+**macOS / Linux** (alternative — no Node.js required)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yarin-mag/Marionette/master/scripts/install.sh | bash
 ```
 
-**Windows** (PowerShell)
+**Windows** (alternative — PowerShell)
 ```powershell
 irm https://raw.githubusercontent.com/yarin-mag/Marionette/master/scripts/install.ps1 | iex
 ```
 
-This downloads the latest release, installs it to `/usr/local/lib/marionette`, registers the MCP server with Claude Code, and configures auto-start.
+This downloads the latest release, installs it to `~/.marionette/app` (npm) or `/usr/local/lib/marionette` (curl/PowerShell), registers the MCP server with Claude Code, and configures auto-start.
 
 After installing, open **http://localhost:8787**.
 
