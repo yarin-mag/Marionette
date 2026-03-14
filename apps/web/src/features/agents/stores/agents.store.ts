@@ -30,6 +30,7 @@ interface AgentsStore {
   // Computed
   getFilteredAgents: () => AgentSnapshot[];
   getDisconnectedCount: () => number;
+  getChildren: (parentId: string) => AgentSnapshot[];
 }
 
 export const useAgentsStore = create<AgentsStore>()(
@@ -99,14 +100,21 @@ export const useAgentsStore = create<AgentsStore>()(
       // Computed
       getFilteredAgents: () => {
         const { agents, hideDisconnected } = get();
-        return hideDisconnected
-          ? agents.filter((a) => a.status !== "disconnected")
-          : agents;
+        return agents.filter(
+          (a) =>
+            !a.parent_agent_id &&
+            (!hideDisconnected || a.status !== "disconnected")
+        );
       },
 
       getDisconnectedCount: () => {
         const { agents } = get();
-        return agents.filter((a) => a.status === "disconnected").length;
+        return agents.filter((a) => a.status === "disconnected" && !a.parent_agent_id).length;
+      },
+
+      getChildren: (parentId: string) => {
+        const { agents } = get();
+        return agents.filter((a) => a.parent_agent_id === parentId);
       },
     }),
     {

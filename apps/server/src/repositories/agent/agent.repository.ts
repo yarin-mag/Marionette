@@ -20,12 +20,13 @@ export class AgentRepository extends BaseRepository {
     const metadata = event.agent_metadata;
     const raw = event as WrapperEvent;
     const sessionId = (event.payload?.sessionId as string | undefined) ?? null;
+    const parentAgentId = (event.payload?.parent_agent_id as string | undefined) ?? null;
 
     await this.query(
       `INSERT INTO agents (
         agent_id, agent_name, status, terminal, cwd,
-        last_activity, session_start, metadata, status_since, current_session_id
-      ) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $6, CURRENT_TIMESTAMP, $7)
+        last_activity, session_start, metadata, status_since, current_session_id, parent_agent_id
+      ) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $6, CURRENT_TIMESTAMP, $7, $8)
       ON CONFLICT (agent_id) DO UPDATE SET
         agent_name = COALESCE(excluded.agent_name, agents.agent_name),
         status = excluded.status,
@@ -37,6 +38,7 @@ export class AgentRepository extends BaseRepository {
         session_errors = CASE WHEN agents.current_session_id IS NULL OR agents.current_session_id != excluded.current_session_id THEN 0 ELSE agents.session_errors END,
         session_tokens = CASE WHEN agents.current_session_id IS NULL OR agents.current_session_id != excluded.current_session_id THEN 0 ELSE agents.session_tokens END,
         current_session_id = excluded.current_session_id,
+        parent_agent_id = COALESCE(excluded.parent_agent_id, agents.parent_agent_id),
         status_since = CASE WHEN excluded.status != agents.status THEN CURRENT_TIMESTAMP ELSE agents.status_since END,
         metadata = COALESCE(excluded.metadata, agents.metadata),
         updated_at = CURRENT_TIMESTAMP`,
@@ -48,6 +50,7 @@ export class AgentRepository extends BaseRepository {
         metadata?.cwd ?? raw.cwd ?? null,
         this.safeStringify(metadata),
         sessionId,
+        parentAgentId,
       ]
     );
   }

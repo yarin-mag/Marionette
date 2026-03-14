@@ -51,7 +51,8 @@ export function buildAgentStartedEvent(
   entry: ClaudeJsonlEntry,
   filePath: string,
   stableRunId: string,
-  source?: AgentMetadata['source']
+  source?: AgentMetadata['source'],
+  parentAgentId?: string
 ): MarionetteEvent {
   const base = buildBase(entry, filePath, stableRunId, source);
   return {
@@ -59,6 +60,10 @@ export function buildAgentStartedEvent(
     type: "agent.started",
     summary: `Subagent started: ${entry.slug ?? entry.agentId ?? "unknown"}`,
     status: "working" as AgentStatus,
+    payload: {
+      ...((base as MarionetteEvent).payload ?? {}),
+      ...(parentAgentId ? { parent_agent_id: parentAgentId } : {}),
+    },
   } as MarionetteEvent;
 }
 

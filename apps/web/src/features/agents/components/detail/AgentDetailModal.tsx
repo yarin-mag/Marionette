@@ -4,7 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../../../components/ui/dialog";
+} from "../../../../components/ui/dialog";
 import { AgentDetailPanel } from "./AgentDetailPanel";
 
 interface AgentDetailModalProps {
@@ -22,7 +22,7 @@ export function AgentDetailModal({ agent, open, onClose }: AgentDetailModalProps
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="w-[900px] max-w-[95vw] max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="sr-only">Agent Details</DialogTitle>
         </DialogHeader>

@@ -21,6 +21,7 @@ export interface DbAgentRow {
   session_tokens: number;
   status_since: string | null;
   source_file: string | null;
+  parent_agent_id: string | null;
   metadata: string | null;
 }
 

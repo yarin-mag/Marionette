@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { DEFAULT_PRICING } from "@marionette/shared";
+import type { AgentStatus } from "@marionette/shared";
 
 /**
  * Merge Tailwind classes with proper override handling
@@ -90,4 +91,11 @@ export function estimateSessionCost(sessionTokens: number): number {
       sessionTokens * 0.35 * p.outputPerMillion) /
     1_000_000
   );
+}
+
+export function getStatusDotClass(status: AgentStatus): string {
+  if (status === 'working') return 'bg-green-500';
+  if (status === 'error' || status === 'crashed') return 'bg-red-500';
+  if (status === 'finished' || status === 'disconnected') return 'bg-muted-foreground';
+  return 'bg-amber-500';
 }

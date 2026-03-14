@@ -95,7 +95,15 @@ export async function initializeFileState(
   }
   // Emit agent.started for subagent files on initialization
   if (isSubagentFile(filePath)) {
-    initialEvents.push(buildAgentStartedEvent(entry, filePath, stableRunId, source));
+    // Find the parent agent by looking for an active main-session state with the same slug
+    let parentAgentId: string | undefined;
+    for (const [path, s] of fileStates) {
+      if (s.slug === slug && isMainSessionFile(path)) {
+        parentAgentId = s.agentId;
+        break;
+      }
+    }
+    initialEvents.push(buildAgentStartedEvent(entry, filePath, stableRunId, source, parentAgentId));
   }
 
   return { state, initialEvents };

@@ -1,4 +1,4 @@
-import type { AgentSnapshot } from "@marionette/shared";
+import { AGENT_STATUS, type AgentSnapshot } from "@marionette/shared";
 import { API_URL } from "../lib/constants";
 
 export interface AgentSession {
@@ -33,11 +33,26 @@ class CalendarService {
 
       const agents: AgentSnapshot[] = await res.json();
 
+      const ACTIVE_STATUSES = new Set<AgentSnapshot["status"]>([
+        AGENT_STATUS.WORKING,
+        AGENT_STATUS.STARTING,
+        AGENT_STATUS.ERROR,
+        AGENT_STATUS.CRASHED,
+        AGENT_STATUS.BLOCKED,
+        AGENT_STATUS.AWAITING_INPUT,
+      ]);
+
       // Transform to calendar sessions
       const sessions: AgentSession[] = agents
         .filter((agent) => {
           // Only include agents with session data
           if (!agent.session_start || !agent.last_activity) return false;
+
+          // Exclude sub-agents
+          if (agent.parent_agent_id) return false;
+
+          // Only show active statuses (working or needs attention)
+          if (!ACTIVE_STATUSES.has(agent.status)) return false;
 
           const sessionStart = new Date(agent.session_start);
           const sessionEnd = new Date(agent.last_activity);

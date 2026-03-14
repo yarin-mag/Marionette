@@ -44,6 +44,9 @@ export function useAgentNotifications(agents: AgentSnapshot[]) {
     }
 
     for (const agent of agents) {
+      // Sub-agents are implementation details of their parent — skip all notifications
+      if (agent.parent_agent_id) continue;
+
       const prev = prevStatuses.current[agent.agent_id];
       const curr = agent.status;
       prevStatuses.current[agent.agent_id] = curr;

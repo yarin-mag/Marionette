@@ -85,19 +85,23 @@ TabsTrigger.displayName = "TabsTrigger";
 
 interface TabsContentProps extends React.HTMLAttributes<HTMLDivElement> {
   value: string;
+  /** Keep the tab mounted when inactive (preserves scroll position). Use data-[state=inactive]:hidden in className to visually hide it. */
+  forceMount?: boolean;
 }
 
 const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
-  ({ className, value, ...props }, ref) => {
+  ({ className, value, forceMount, ...props }, ref) => {
     const { value: selectedValue } = useTabsContext();
+    const isActive = selectedValue === value;
 
-    if (selectedValue !== value) {
+    if (!isActive && !forceMount) {
       return null;
     }
 
     return (
       <div
         ref={ref}
+        data-state={isActive ? 'active' : 'inactive'}
         className={cn(
           "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           className

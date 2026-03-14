@@ -1,9 +1,9 @@
 import type { AgentSnapshot } from "@marionette/shared";
 import { useState, useMemo } from "react";
-import { AgentCard } from "../../agents/components/AgentCard";
+import { AgentCard } from "../../agents/components";
 import { EmptyState } from "../../../components/ui/empty-state";
 import { Badge } from "../../../components/ui/badge";
-import { ChevronDown, FolderOpen, Inbox } from "lucide-react";
+import { ChevronDown, FolderOpen, Inbox, Layers } from "lucide-react";
 import { cn } from "../../../lib/utils";
 
 interface GridViewProps {
@@ -130,14 +130,23 @@ export function GridView({ agents, onAgentClick }: GridViewProps) {
         <button
           onClick={() => setGroupByProject((v) => !v)}
           className={cn(
-            "flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border transition-colors",
+            "flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border transition-colors cursor-pointer",
             groupByProject
-              ? "border-primary/60 bg-primary/10 text-primary"
+              ? "border-primary/60 bg-primary/10 text-primary hover:bg-primary/15"
               : "border-border text-muted-foreground hover:text-foreground hover:border-border/80"
           )}
         >
-          <FolderOpen className="h-4 w-4" />
-          Group by project
+          {groupByProject ? (
+            <>
+              <Layers className="h-4 w-4" />
+              Group by status
+            </>
+          ) : (
+            <>
+              <FolderOpen className="h-4 w-4" />
+              Group by project
+            </>
+          )}
         </button>
       </div>
 

@@ -1,7 +1,4 @@
-/**
- * Agent feature components barrel export
- */
-export { AgentCard } from "./AgentCard";
-export { AgentDetailPanel } from "./AgentDetailPanel";
-export { AgentDetailModal } from "./AgentDetailModal";
-export { DeepInspectionPanel } from "./DeepInspectionPanel";
+export { AgentCard } from './card';
+export { AgentDetailPanel, AgentDetailModal } from './detail';
+export { AgentConversationPanel, ConversationMessage } from './conversation';
+export { DeepInspectionPanel } from './DeepInspectionPanel';

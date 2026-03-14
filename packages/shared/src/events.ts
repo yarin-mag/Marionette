@@ -137,6 +137,7 @@ export type AgentSnapshot = {
   session_tokens: number;
   status_since?: string;
   source_file?: string;
+  parent_agent_id?: string;
   metadata?: Record<string, unknown>;
 };
 
