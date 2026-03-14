@@ -74,7 +74,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-npm:
-    name: Publish @marionette/cli to npm
+    name: Publish @marionette-app/cli to npm
     needs: create-release
     runs-on: ubuntu-latest
     steps:
@@ -87,15 +87,20 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Set version from tag
+      - name: Publish to npm
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
-          npm version "$VERSION" --no-git-tag-version
-        working-directory: packages/cli
-
-      - name: Publish to npm
-        run: npm publish --access public
-        working-directory: packages/cli
+          # Patch version directly to avoid npm workspace protocol errors
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('packages/cli/package.json', 'utf8'));
+            pkg.version = '$VERSION';
+            fs.writeFileSync('packages/cli/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          # Publish from /tmp to avoid npm picking up pnpm workspace:* deps
+          cp -r packages/cli /tmp/marionette-cli
+          cd /tmp/marionette-cli
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
