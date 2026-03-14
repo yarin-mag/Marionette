@@ -32,7 +32,7 @@ jobs:
             build_cmd: bash scripts/build-release.sh macos-arm64
             upload_file: marionette-macos-arm64.tar.gz
 
-          - os: macos-13       # x64 GitHub-hosted runner
+          - os: macos-15-intel # x64 GitHub-hosted runner (macos-13 retired Dec 2025)
             artifact: macos-x64
             build_cmd: bash scripts/build-release.sh macos-x64
             upload_file: marionette-macos-x64.tar.gz
