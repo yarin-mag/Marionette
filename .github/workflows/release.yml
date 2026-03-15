@@ -9,6 +9,39 @@ permissions:
   contents: write
 
 jobs:
+  bump-versions:
+    name: Bump versions in repo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update package.json versions
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          node -e "
+            const fs = require('fs');
+            const v = '$VERSION';
+            ['package.json', 'apps/server/package.json', 'packages/cli/package.json'].forEach(f => {
+              const pkg = JSON.parse(fs.readFileSync(f, 'utf8'));
+              pkg.version = v;
+              fs.writeFileSync(f, JSON.stringify(pkg, null, 2) + '\n');
+            });
+          "
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet || (
+            git add package.json apps/server/package.json packages/cli/package.json &&
+            git commit -m "chore: bump version to ${{ github.ref_name }}" &&
+            git push
+          )
+
   create-release:
     runs-on: ubuntu-latest
     steps:
