@@ -20,7 +20,21 @@ export class AgentRepository extends BaseRepository {
     const metadata = event.agent_metadata;
     const raw = event as WrapperEvent;
     const sessionId = (event.payload?.sessionId as string | undefined) ?? null;
-    const parentAgentId = (event.payload?.parent_agent_id as string | undefined) ?? null;
+    let parentAgentId = (event.payload?.parent_agent_id as string | undefined) ?? null;
+
+    // agent.started events are always subagents (root agents use conversation.started).
+    // If no parent_agent_id was set (race condition in file watcher), auto-detect the
+    // parent by finding the most recently active root agent with the same cwd.
+    if (event.type === "agent.started" && !parentAgentId && metadata?.cwd) {
+      const result = await this.queryOne<{ agent_id: string }>(
+        `SELECT agent_id FROM agents
+         WHERE cwd = $1 AND parent_agent_id IS NULL
+           AND status NOT IN ('finished', 'disconnected', 'crashed')
+         ORDER BY last_activity DESC LIMIT 1`,
+        [metadata.cwd]
+      );
+      if (result) parentAgentId = result.agent_id;
+    }
 
     await this.query(
       `INSERT INTO agents (
