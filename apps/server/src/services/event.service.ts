@@ -2,6 +2,7 @@ import type { MarionetteEvent, AgentStatus, MessageTokenEntry } from "@marionett
 import { EventRepository } from "../repositories/event.repository.js";
 import { MessageTokensRepository } from "../repositories/message-tokens.repository.js";
 import { AgentService } from "./agent.service.js";
+import { NotificationService } from "./notification.service.js";
 import { DatabaseClient } from "../db.js";
 import { logger } from "../utils/logger.js";
 
@@ -23,6 +24,7 @@ export class EventService {
   private repository = new EventRepository();
   private messageTokensRepository = new MessageTokensRepository();
   private agentService: AgentService;
+  private notificationService = new NotificationService();
 
   constructor(agentService?: AgentService) {
     this.agentService = agentService ?? new AgentService();
@@ -69,6 +71,13 @@ export class EventService {
 
     // Insert event into database
     await this.repository.insert({ ...effectiveEvent, ts });
+
+    // Fire Discord notification for terminal statuses (fire-and-forget)
+    if (effectiveEvent.agent_id && effectiveEvent.status) {
+      this.agentService.getAgent(effectiveEvent.agent_id).then((agent) => {
+        if (agent && !agent.parent_agent_id) this.notificationService.notifyAgentStatus(agent, effectiveEvent);
+      }).catch(() => {});
+    }
 
     // For llm.call events from the proxy, persist the per-message token breakdown
     if (
