@@ -11,6 +11,10 @@ const VALID_AGENT_STATUSES = new Set<string>([
   'finished', 'crashed', 'disconnected', 'awaiting_input', 'delegating'
 ]);
 
+const NOTIFIABLE_STATUSES = new Set<string>([
+  'idle', 'finished', 'crashed', 'error', 'awaiting_input',
+]);
+
 export interface BatchResult {
   processed: MarionetteEvent[];
   failed: Array<{ event: MarionetteEvent; error: string }>;
@@ -73,7 +77,7 @@ export class EventService {
     await this.repository.insert({ ...effectiveEvent, ts });
 
     // Fire Discord notification for terminal statuses (fire-and-forget).
-    if (effectiveEvent.agent_id && effectiveEvent.status) {
+    if (effectiveEvent.agent_id && effectiveEvent.status && NOTIFIABLE_STATUSES.has(effectiveEvent.status)) {
       this.agentService.getAgent(effectiveEvent.agent_id).then((agent) => {
         if (agent && !agent.is_subagent && !agent.parent_agent_id) {
           this.notificationService.notifyAgentStatus(agent, effectiveEvent);

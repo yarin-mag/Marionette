@@ -17,23 +17,31 @@ function formatDuration(ms: number): string {
   return `${s}s`;
 }
 
+// How long to suppress repeat notifications for the same agent+status (ms).
+const DEBOUNCE_MS = 60_000;
+
 export class NotificationService {
   private prefsRepo = new PreferencesRepository();
+  // key: `${agentId}:${status}` → timestamp of last successful send
+  private readonly sentAt = new Map<string, number>();
 
   async notifyAgentStatus(agent: AgentSnapshot, event: MarionetteEvent): Promise<void> {
     const status = event.status;
-    logger.info(`[discord] called — status=${status} agent=${agent.agent_id.slice(0, 12)}`);
 
     const isDone = status === "idle" || status === "finished";
     const isError = status === "crashed" || status === "error";
     const isAwaitingInput = status === "awaiting_input";
-    if (!isDone && !isError && !isAwaitingInput) {
-      logger.info(`[discord] skipping — status not actionable`);
+    if (!isDone && !isError && !isAwaitingInput) return;
+
+    // Debounce: skip if the same agent+status was sent recently.
+    const debounceKey = `${agent.agent_id}:${status}`;
+    const lastSent = this.sentAt.get(debounceKey) ?? 0;
+    if (Date.now() - lastSent < DEBOUNCE_MS) {
+      logger.debug(`[discord] debounced — status=${status} agent=${agent.agent_id.slice(0, 12)}`);
       return;
     }
 
     const webhookUrl = await this.getWebhookUrl();
-    logger.info(`[discord] webhookUrl=${webhookUrl ? "SET" : "NOT SET"}`);
     if (!webhookUrl) return;
 
     const embed = isDone
@@ -42,7 +50,8 @@ export class NotificationService {
         ? this.buildAwaitingInputEmbed(agent)
         : this.buildErrorEmbed(agent, event);
 
-    logger.info(`[discord] firing POST`);
+    this.sentAt.set(debounceKey, Date.now());
+    logger.info(`[discord] firing POST — status=${status} agent=${agent.agent_id.slice(0, 12)}`);
     withRetry(() => this.post(webhookUrl, embed), `discord-webhook agent=${agent.agent_id.slice(0, 12)}`);
   }
 
@@ -115,6 +124,12 @@ export class NotificationService {
       body: JSON.stringify({ embeds: [embed] }),
     });
     if (!res.ok) {
+      if (res.status === 429) {
+        const retryAfter = res.headers.get("retry-after");
+        const waitMs = retryAfter ? parseFloat(retryAfter) * 1000 : 5_000;
+        logger.warn(`[discord] rate limited, waiting ${waitMs}ms before retry`);
+        await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+      }
       throw new Error(`Discord webhook responded with ${res.status}`);
     }
   }
