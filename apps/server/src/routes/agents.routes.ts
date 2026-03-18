@@ -61,10 +61,6 @@ export function createAgentsRoutes(wsService?: WebSocketService, commandService?
     const fire = (cmd: string, args: string[], shell = false) =>
       spawn(cmd, args, { detached: true, stdio: "ignore", shell }).on("error", () => {}).unref();
 
-    if (isVSCode && process.platform === "darwin") {
-      fire("osascript", ["-e", 'tell application "Code" to activate']);
-      return res.json({ ok: true, method: "applescript", app: "Code" });
-    }
     if (isVSCode && process.platform === "linux" && cwd) {
       fire("code", [cwd]);
       return res.json({ ok: true, method: "vscode" });
@@ -149,18 +145,45 @@ export function createAgentsRoutes(wsService?: WebSocketService, commandService?
     }
 
     if (process.platform === "darwin") {
+      // VS Code: use the CLI to target the correct project window (same as Linux)
+      if (isVSCode) {
+        if (cwd) {
+          fire("code", [cwd]);
+          return res.json({ ok: true, method: "vscode-cli", app: "Code" });
+        }
+        fire("osascript", ["-e", 'tell application "Code" to activate']);
+        return res.json({ ok: true, method: "applescript", app: "Code" });
+      }
+
       const appMap: Record<string, string> = {
-        "iterm2": "iTerm2",
+        "iterm2":       "iTerm2",
         "terminal.app": "Terminal",
-        "warp": "Warp",
-        "ghostty": "Ghostty",
-        "hyper": "Hyper",
+        "warp":         "Warp",
+        "ghostty":      "Ghostty",
+        "hyper":        "Hyper",
       };
       const appName = appMap[terminal.toLowerCase()];
       if (appName) {
         fire("osascript", ["-e", `tell application "${appName}" to activate`]);
         return res.json({ ok: true, method: "applescript", app: appName });
       }
+
+      // Fallback: probe known terminal apps in priority order and activate the first running one.
+      // Mirrors the Windows fallback strategy for when terminal detection failed at session start.
+      const candidates = ["Warp", "iTerm2", "Terminal", "Ghostty", "Hyper"];
+      const script = [
+        'set candidates to {"Warp", "iTerm2", "Terminal", "Ghostty", "Hyper"}',
+        'repeat with appName in candidates',
+        '  try',
+        '    if application appName is running then',
+        '      tell application appName to activate',
+        '      exit repeat',
+        '    end if',
+        '  end try',
+        'end repeat',
+      ].join('\n');
+      fire("osascript", ["-e", script]);
+      return res.json({ ok: true, method: "applescript-fallback", candidates });
     }
 
     const reason = terminal ? `unsupported terminal "${terminal}"` : "terminal not detected (restart Claude Code to enable focus)";
