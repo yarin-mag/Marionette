@@ -83,6 +83,54 @@ export class DatabaseClient {
     } else {
       logger.info("Database schema is current");
     }
+
+    // M001: add 'delegating' to agents.status CHECK constraint.
+    // SQLite can't ALTER a CHECK constraint — detect the old schema and rebuild if needed.
+    // This runs even when the schema version is current because M001 was shipped without a
+    // version bump (the version-based reset would destroy data; this is data-safe).
+    const agentsSchema = this.db.prepare(
+      "SELECT sql FROM sqlite_master WHERE type='table' AND name='agents'"
+    ).get() as { sql: string } | undefined;
+    if (agentsSchema && !agentsSchema.sql.includes("'delegating'")) {
+      logger.info("Applying M001: rebuilding agents table to add 'delegating' status...");
+      this.db.exec(`
+        PRAGMA foreign_keys = OFF;
+        BEGIN;
+        CREATE TABLE agents_new (
+          agent_id TEXT PRIMARY KEY,
+          agent_name TEXT,
+          status TEXT DEFAULT 'working' CHECK (status IN ('working', 'starting', 'blocked', 'idle', 'finished', 'disconnected', 'crashed', 'error', 'awaiting_input', 'delegating')),
+          terminal TEXT,
+          cwd TEXT,
+          last_activity TIMESTAMP,
+          session_start TIMESTAMP,
+          metadata TEXT,
+          current_run_id TEXT,
+          current_task TEXT,
+          current_session_id TEXT,
+          total_runs INTEGER DEFAULT 0,
+          total_tasks INTEGER DEFAULT 0,
+          total_errors INTEGER DEFAULT 0,
+          total_tokens INTEGER DEFAULT 0,
+          total_duration_ms INTEGER DEFAULT 0,
+          session_runs INTEGER DEFAULT 0,
+          session_errors INTEGER DEFAULT 0,
+          session_tokens INTEGER DEFAULT 0,
+          source_file TEXT,
+          parent_agent_id TEXT REFERENCES agents_new(agent_id) ON DELETE SET NULL,
+          is_subagent INTEGER DEFAULT 0,
+          status_since TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        INSERT INTO agents_new SELECT * FROM agents;
+        DROP TABLE agents;
+        ALTER TABLE agents_new RENAME TO agents;
+        COMMIT;
+        PRAGMA foreign_keys = ON;
+      `);
+      logger.info("M001 applied successfully");
+    }
   }
 
   /**
