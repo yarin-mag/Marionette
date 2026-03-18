@@ -43,7 +43,7 @@ fi
 
 # ── Fetch latest release tag ──────────────────────────────────────────────────
 LATEST="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-  | grep '"tag_name"' | cut -d '"' -f4)"
+  | grep -o '"tag_name"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d '"' -f4)"
 
 if [ -z "$LATEST" ]; then
   echo "Failed to fetch latest release. Check your internet connection or that ${REPO} has releases." >&2
