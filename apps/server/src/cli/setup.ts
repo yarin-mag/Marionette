@@ -58,16 +58,19 @@ async function setupHooks(): Promise<void> {
   }
 
   const fwdHooksDir = hooksDir.replace(/\\/g, "/");
+  // Use the absolute path to the node binary that ran this setup so hooks
+  // work in any terminal regardless of PATH (e.g. Terminal.app without nvm).
+  const nodeBin = process.execPath.replace(/\\/g, "/");
 
   const hooks = settings.hooks as Record<string, unknown> ?? {};
   hooks["PreToolUse"] = [
-    { hooks: [{ type: "command", command: `node "${fwdHooksDir}/on-session-start.js"`, timeout: 10 }] },
+    { hooks: [{ type: "command", command: `"${nodeBin}" "${fwdHooksDir}/on-session-start.js"`, timeout: 10 }] },
   ];
   hooks["Stop"] = [
-    { hooks: [{ type: "command", command: `node "${fwdHooksDir}/on-stop.js"`, timeout: 10 }] },
+    { hooks: [{ type: "command", command: `"${nodeBin}" "${fwdHooksDir}/on-stop.js"`, timeout: 10 }] },
   ];
   hooks["Notification"] = [
-    { hooks: [{ type: "command", command: `node "${fwdHooksDir}/on-error.js"`, timeout: 5 }] },
+    { hooks: [{ type: "command", command: `"${nodeBin}" "${fwdHooksDir}/on-error.js"`, timeout: 5 }] },
   ];
   settings.hooks = hooks;
 
