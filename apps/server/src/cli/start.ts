@@ -32,7 +32,7 @@ export async function start(): Promise<void> {
 
   const server = app.listen(config.port, () => {
     logger.info(`Server listening on http://localhost:${config.port}`);
-    logger.info(`WebSocket: ws://localhost:${config.port}/stream`);
+    logger.info(`SSE stream: http://localhost:${config.port}/stream`);
   });
 
   const agentService = new AgentService();
@@ -43,6 +43,7 @@ export async function start(): Promise<void> {
   wsService.start();
 
   app.use("/api", createApiRoutes(wsService, commandService, eventService));
+  app.get("/stream", (req, res) => wsService.handleSseConnection(req, res));
 
   // Serve bundled React app
   const webDist = process.env.WEB_DIST ?? resolve(distDir, "../web");
